@@ -1,0 +1,30 @@
+---
+version: '2'
+
+services:
+  kafka:
+    image: 'bitnami/kafka:latest'
+    ports:
+      - '9094:9094'
+    environment:
+      - KAFKA_CFG_NODE_ID=0
+      - KAFKA_CFG_PROCESS_ROLES=broker,controller
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
+      - ALLOW_PLAINTEXT_LISTENER=yes
+
+  migratorydata:
+    image: migratorydata/server:6.0.16
+    hostname: migratorydata
+    container_name: migratorydata
+    depends_on:
+      - kafka
+    ports:
+      - "8800:8800"
+    environment:
+      MIGRATORYDATA_JAVA_EXTRA_OPTS: '-XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap'
+      MIGRATORYDATA_EXTRA_OPTS: '-DMemory=128MB -DLogLevel=INFO -DX.ConnectionOffload=true -DClusterEngine=kafka'
+      MIGRATORYDATA_KAFKA_EXTRA_OPTS: '-Dbootstrap.servers=kafka:9092 -Dtopics=server'
